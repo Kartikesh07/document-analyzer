@@ -1,0 +1,13 @@
+streamlit
+fastapi
+uvicorn
+requests
+pdfplumber
+python-docx
+python-dotenv
+openai
+pytesseract
+pdf2image
+Pillow
+pandas
+python-multipart
