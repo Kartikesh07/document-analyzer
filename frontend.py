@@ -18,6 +18,8 @@ def start_backend():
 
 # Start the backend in a separate daemon thread
 threading.Thread(target=start_backend, daemon=True).start()
+
+
 # Configuration
 BACKEND_URL = "http://localhost:8000"
 SUPPORTED_TYPES = ["pdf", "docx", "txt"]
