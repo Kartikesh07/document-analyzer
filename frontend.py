@@ -11,10 +11,29 @@ import subprocess
 import time
 
 def start_backend():
-    # Start the FastAPI server using uvicorn
-    subprocess.Popen(["uvicorn", "backend:app", "--host", "0.0.0.0", "--port", "8000"])
-    # Wait a couple of seconds to ensure the backend is up before making any requests
-    time.sleep(2)
+    # Try different ports if 8000 is occupied
+    ports = [8000, 8001, 8002, 8003]
+    
+    for port in ports:
+        try:
+            # Check if port is in use before trying to start server
+            import socket
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            result = sock.connect_ex(('127.0.0.1', port))
+            sock.close()
+            
+            if result != 0:  # Port is available
+                process = subprocess.Popen(["uvicorn", "backend:app", "--host", "0.0.0.0", "--port", str(port)])
+                # Update the backend URL to use the successful port
+                global BACKEND_URL
+                BACKEND_URL = f"http://localhost:{port}"
+                time.sleep(2)
+                return
+        except Exception as e:
+            continue
+    
+    # If all ports are occupied, show error
+    st.error("Could not start backend server. All ports (8000-8003) are in use. Please close any running instances.")
 
 # Start the backend in a separate daemon thread
 threading.Thread(target=start_backend, daemon=True).start()
@@ -175,10 +194,19 @@ def apply_custom_style():
     """, unsafe_allow_html=True)
 
 # Function to handle file uploads
+# Add to imports at the top
+from typing import List
+import math
+
+# Add after imports
+def chunk_for_display(text: str, chunk_size: int = 2000) -> List[str]:
+    """Split text into chunks for display"""
+    return [text[i:i + chunk_size] for i in range(0, len(text), chunk_size)]
+
+# Modify the handle_upload function
 def handle_upload(uploaded_file):
     """Proper file upload handling with error reporting"""
     try:
-        # Create proper multipart form data
         files = {
             "file": (uploaded_file.name, uploaded_file.getvalue(), uploaded_file.type)
         }
@@ -186,7 +214,7 @@ def handle_upload(uploaded_file):
         response = requests.post(
             f"{BACKEND_URL}/upload",
             files=files,
-            timeout=30  # Add timeout
+            timeout=60  # Increased timeout for larger files
         )
         response.raise_for_status()
         return response.json()
